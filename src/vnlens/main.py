@@ -60,6 +60,7 @@ class VNLensApp:
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.worker.translated.connect(self.overlay.show_text)
+        self.worker.cleared.connect(self.overlay.clear)
         self.worker.status.connect(self._on_status)
 
         self._setup_hotkeys()

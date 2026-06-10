@@ -8,6 +8,7 @@ from ..capture.screen import ScreenCapture
 from ..config.schema import AppConfig, Region
 from ..ocr.base import BaseOCR
 from ..translation.base import TranslationError, TranslationProvider
+from ..translation.retry import translate_with_retry
 from ..utils.change_detect import ChangeDetector
 
 log = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ class PipelineWorker(QObject):
     """
 
     translated = pyqtSignal(str)
+    cleared = pyqtSignal()
     status = pyqtSignal(str)  # "active" | "waiting" | "error"
 
     def __init__(self, config: AppConfig, ocr: BaseOCR, provider: TranslationProvider) -> None:
@@ -59,8 +61,10 @@ class PipelineWorker(QObject):
                 self._ocr.recognize(capture.grab(region), source_lang),
                 time.monotonic() * 1000,
             )
-            if stable is not None:
+            if stable:
                 self._translate(stable, source_lang, target_lang)
+            elif stable == "":
+                self.cleared.emit()
             time.sleep(interval)
 
         capture.close()
@@ -68,7 +72,7 @@ class PipelineWorker(QObject):
     def _translate(self, text: str, src: str, dst: str) -> None:
         self.status.emit("waiting")
         try:
-            result = asyncio.run(self._provider.translate(text, src, dst))
+            result = asyncio.run(translate_with_retry(self._provider, text, src, dst))
         except TranslationError as exc:
             log.warning("Translation failed: %s", exc)
             self.status.emit("error")

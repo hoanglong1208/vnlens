@@ -19,17 +19,15 @@ class ChangeDetector:
     def __init__(self, debounce_ms: int = 300) -> None:
         self.debounce_ms = debounce_ms
         self._pending: str | None = None
+        # Start with the hash of "" so a blank screen at startup emits nothing,
+        # while a later transition to blank still emits "" once (text box cleared).
+        self._last_emitted_hash: str | None = text_hash("")
         self._pending_since: float = 0.0
-        self._last_emitted_hash: str | None = None
 
     def update(self, text: str, now_ms: float) -> str | None:
-        """Feed the latest OCR result. Returns the text when it has stabilized into
-        a new value, otherwise None."""
+        """Feed the latest OCR result. Returns the text once it has stabilized
+        into a new value. An empty string means the text box has cleared."""
         text = text.strip()
-        if not text:
-            self._pending = None
-            return None
-
         if text != self._pending:
             self._pending = text
             self._pending_since = now_ms
