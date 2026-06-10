@@ -43,8 +43,16 @@ class TranslationConfig(BaseModel):
     api_keys: dict[str, str] = Field(default_factory=dict)
 
 
+class FloatPosition(BaseModel):
+    """Overlay top-left corner as screen fractions, set by dragging in move mode."""
+
+    x: float = Field(ge=0.0, le=1.0)
+    y: float = Field(ge=0.0, le=1.0)
+
+
 class OverlayConfig(BaseModel):
     position_mode: PositionMode = "anchored"
+    float_pos: FloatPosition | None = None
     font_size: int = Field(default=16, ge=12, le=24)
     opacity: float = Field(default=0.82, ge=0.0, le=0.95)
     text_color: str = "#eaeaea"
@@ -54,6 +62,7 @@ class OverlayConfig(BaseModel):
 class HotkeyConfig(BaseModel):
     toggle: str = "f2"
     select_region: str = "f3"
+    move_overlay: str = "f4"
 
 
 class AppConfig(BaseModel):

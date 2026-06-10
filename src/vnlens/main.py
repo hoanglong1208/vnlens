@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import QApplication
 
 from .capture.region_selector import RegionSelector
 from .config.manager import ConfigManager, config_dir
-from .config.schema import Region
+from .config.schema import FloatPosition, Region
 from .core.pipeline import PipelineWorker
 from .ocr.winrt_ocr import WinRtOcr
 from .overlay.window import OverlayWindow
@@ -34,6 +34,7 @@ class _HotkeyBridge(QObject):
 
     toggle = pyqtSignal()
     select_region = pyqtSignal()
+    move_overlay = pyqtSignal()
 
 
 class VNLensApp:
@@ -55,8 +56,11 @@ class VNLensApp:
         self.tray = TrayIcon()
         self.tray.toggle_requested.connect(self._toggle_pause)
         self.tray.select_region_requested.connect(self._select_region)
+        self.tray.move_overlay_toggled.connect(self.overlay.set_move_mode)
+        self.tray.reset_position_requested.connect(self._reset_overlay_position)
         self.tray.quit_requested.connect(self._quit)
         self.tray.show()
+        self.overlay.moved.connect(self._on_overlay_moved)
 
         self.thread = QThread()
         self.worker = PipelineWorker(self.config, WinRtOcr(), provider)
@@ -115,10 +119,12 @@ class VNLensApp:
         self._bridge = _HotkeyBridge()
         self._bridge.toggle.connect(self._toggle_pause)
         self._bridge.select_region.connect(self._select_region)
+        self._bridge.move_overlay.connect(self.tray.toggle_move_mode)
         self.hotkeys = HotkeyListener(
             {
                 self.config.hotkeys.toggle: self._bridge.toggle.emit,
                 self.config.hotkeys.select_region: self._bridge.select_region.emit,
+                self.config.hotkeys.move_overlay: self._bridge.move_overlay.emit,
             }
         )
         self.hotkeys.start()
@@ -143,6 +149,18 @@ class VNLensApp:
         # Anchor first: set_region starts the pipeline producing translations.
         self._update_anchor(region)
         self.worker.set_region(region)
+
+    def _on_overlay_moved(self, x: float, y: float) -> None:
+        self.config.overlay.position_mode = "float"
+        self.config.overlay.float_pos = FloatPosition(x=x, y=y)
+        self.config_manager.save(self.config)
+
+    def _reset_overlay_position(self) -> None:
+        self.config.overlay.position_mode = "anchored"
+        self.config.overlay.float_pos = None
+        self.config_manager.save(self.config)
+        self.tray.set_move_checked(False)
+        self.overlay.set_position_mode("anchored", None)
 
     def _update_anchor(self, region: Region) -> None:
         screen = QGuiApplication.primaryScreen().geometry()

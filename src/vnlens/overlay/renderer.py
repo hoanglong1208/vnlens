@@ -6,7 +6,7 @@ from PyQt6.QtGui import QColor, QFont, QPainter
 from ..config.schema import OverlayConfig
 
 _BG_COLOR = QColor(10, 10, 20)
-_ACCENT_COLOR = QColor(0xE9, 0x45, 0x60)
+ACCENT_COLOR = QColor(0xE9, 0x45, 0x60)
 ACCENT_WIDTH = 3
 PADDING_X = 14
 PADDING_Y = 10
@@ -47,14 +47,14 @@ def draw(painter: QPainter, rect: QRect, text: str, style: TextStyle) -> None:
     painter.drawRoundedRect(rect, _RADIUS, _RADIUS)
 
     accent = QRect(rect.left(), rect.top(), ACCENT_WIDTH, rect.height())
-    painter.setBrush(_ACCENT_COLOR)
+    painter.setBrush(ACCENT_COLOR)
     painter.drawRect(accent)
 
     text_rect = rect.adjusted(
         ACCENT_WIDTH + PADDING_X, PADDING_Y, -PADDING_X, -PADDING_Y
     )
     painter.setFont(font_for(style))
-    # AlignTop so text longer than the 3-line cap loses its tail, not both ends.
+    # AlignTop so text longer than the line cap loses its tail, not both ends.
     flags = int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop) | int(
         Qt.TextFlag.TextWordWrap
     )

@@ -2,7 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from vnlens.config.manager import ConfigManager
-from vnlens.config.schema import AppConfig, Region
+from vnlens.config.schema import AppConfig, FloatPosition, Region
 
 
 def test_defaults():
@@ -47,6 +47,28 @@ def test_roundtrip(tmp_path):
 def test_load_missing_returns_defaults(tmp_path):
     manager = ConfigManager(path=tmp_path / "missing.json")
     assert manager.load() == AppConfig()
+
+
+def test_overlay_float_position_roundtrip(tmp_path):
+    manager = ConfigManager(path=tmp_path / "config.json")
+    config = AppConfig()
+    config.overlay.position_mode = "float"
+    config.overlay.float_pos = FloatPosition(x=0.25, y=0.9)
+    manager.save(config)
+
+    loaded = manager.load()
+    assert loaded.overlay.position_mode == "float"
+    assert loaded.overlay.float_pos == FloatPosition(x=0.25, y=0.9)
+
+
+def test_float_position_bounds():
+    with pytest.raises(ValidationError):
+        FloatPosition(x=1.2, y=0.5)
+
+
+def test_default_hotkeys():
+    hotkeys = AppConfig().hotkeys
+    assert (hotkeys.toggle, hotkeys.select_region, hotkeys.move_overlay) == ("f2", "f3", "f4")
 
 
 def test_load_corrupt_returns_defaults(tmp_path):
