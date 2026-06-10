@@ -41,9 +41,15 @@ class OverlayWindow(QWidget):
     def show_text(self, text: str) -> None:
         self._text = text
         self._relayout()
-        self.show()
-        self._enable_click_through()
-        self._start_fade(0.0, 1.0, _FADE_IN_MS)
+        # Fade in only from hidden; consecutive lines would flicker otherwise.
+        if self.isVisible():
+            self._stop_fade()
+            self.setWindowOpacity(1.0)
+        else:
+            self.setWindowOpacity(0.0)
+            self.show()
+            self._enable_click_through()
+            self._start_fade(0.0, 1.0, _FADE_IN_MS)
         self.update()
 
     def clear(self) -> None:
@@ -67,15 +73,20 @@ class OverlayWindow(QWidget):
         top = self._anchor["top"] + self._anchor["height"] + _GAP
         self.setGeometry(left, top, width, height)
 
+    def _stop_fade(self) -> None:
+        """Stop any running fade. Disconnect first: stop() emits finished, which
+        would otherwise trigger a pending hide."""
+        with contextlib.suppress(TypeError):
+            self._fade.finished.disconnect()
+        self._fade.stop()
+
     def _start_fade(
         self, start: float, end: float, duration: int, hide_at_end: bool = False
     ) -> None:
-        self._fade.stop()
+        self._stop_fade()
         self._fade.setDuration(duration)
         self._fade.setStartValue(start)
         self._fade.setEndValue(end)
-        with contextlib.suppress(TypeError):
-            self._fade.finished.disconnect()
         if hide_at_end:
             self._fade.finished.connect(self.hide)
         self._fade.start()

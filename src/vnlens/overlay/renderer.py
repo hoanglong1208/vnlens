@@ -54,7 +54,8 @@ def draw(painter: QPainter, rect: QRect, text: str, style: TextStyle) -> None:
         ACCENT_WIDTH + PADDING_X, PADDING_Y, -PADDING_X, -PADDING_Y
     )
     painter.setFont(font_for(style))
-    flags = int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter) | int(
+    # AlignTop so text longer than the 3-line cap loses its tail, not both ends.
+    flags = int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop) | int(
         Qt.TextFlag.TextWordWrap
     )
 

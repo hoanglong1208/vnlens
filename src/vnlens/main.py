@@ -140,8 +140,9 @@ class VNLensApp:
     def _on_region_selected(self, region: Region) -> None:
         self.config.capture.region = region
         self.config_manager.save(self.config)
-        self.worker.set_region(region)
+        # Anchor first: set_region starts the pipeline producing translations.
         self._update_anchor(region)
+        self.worker.set_region(region)
 
     def _update_anchor(self, region: Region) -> None:
         screen = QGuiApplication.primaryScreen().geometry()
