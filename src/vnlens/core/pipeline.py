@@ -10,6 +10,7 @@ from ..ocr.base import BaseOCR
 from ..translation.base import TranslationError, TranslationProvider
 from ..translation.retry import translate_with_retry
 from ..utils.change_detect import ChangeDetector
+from ..utils.lines import merge_wrapped_lines
 
 log = logging.getLogger(__name__)
 
@@ -58,8 +59,9 @@ class PipelineWorker(QObject):
                 continue
 
             try:
+                raw = self._ocr.recognize(capture.grab(region), source_lang)
                 stable = detector.update(
-                    self._ocr.recognize(capture.grab(region), source_lang),
+                    merge_wrapped_lines(raw, source_lang),
                     time.monotonic() * 1000,
                 )
             except Exception:

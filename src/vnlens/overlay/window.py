@@ -9,7 +9,7 @@ from ..config.schema import OverlayConfig
 from . import renderer
 
 _GAP = 8
-_MAX_LINES = 3
+_MAX_LINES = 4
 _FADE_IN_MS = 150
 _FADE_OUT_MS = 100
 

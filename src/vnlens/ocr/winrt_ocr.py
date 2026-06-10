@@ -57,4 +57,5 @@ class WinRtOcr(BaseOCR):
     @staticmethod
     async def _recognize_async(engine: OcrEngine, bitmap: SoftwareBitmap) -> str:
         result = await engine.recognize_async(bitmap)
-        return result.text or ""
+        # Join lines explicitly; OcrResult.text flattens them and loses structure.
+        return "\n".join(line.text for line in result.lines)
