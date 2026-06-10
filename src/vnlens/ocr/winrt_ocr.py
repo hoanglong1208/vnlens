@@ -25,8 +25,12 @@ class WinRtOcr(BaseOCR):
         if engine is None:
             return ""
         bitmap = self._to_software_bitmap(image)
-        result = asyncio.run(self._recognize_async(engine, bitmap))
-        return result
+        text = asyncio.run(self._recognize_async(engine, bitmap))
+        if lang == "ja":
+            # WinRT joins detected words with spaces, which is wrong for Japanese
+            # and degrades translation input.
+            text = text.replace(" ", "")
+        return text
 
     @staticmethod
     def _engine_for(lang: str) -> OcrEngine | None:
