@@ -35,6 +35,7 @@ def _status_icon(color: QColor) -> QIcon:
 class TrayIcon(QSystemTrayIcon):
     toggle_requested = pyqtSignal()
     select_region_requested = pyqtSignal()
+    settings_requested = pyqtSignal()
     move_overlay_toggled = pyqtSignal(bool)
     reset_position_requested = pyqtSignal()
     quit_requested = pyqtSignal()
@@ -52,6 +53,7 @@ class TrayIcon(QSystemTrayIcon):
         self._toggle_action = menu.addAction(_PAUSE_LABEL)
         self._toggle_action.triggered.connect(self.toggle_requested)
         menu.addAction("Chọn vùng mới").triggered.connect(self.select_region_requested)
+        menu.addAction("Cài đặt").triggered.connect(self.settings_requested)
         menu.addSeparator()
         self._move_action = menu.addAction("Di chuyển overlay")
         self._move_action.setCheckable(True)
@@ -60,8 +62,13 @@ class TrayIcon(QSystemTrayIcon):
         menu.addSeparator()
         menu.addAction("Thoát").triggered.connect(self.quit_requested)
         self.setContextMenu(menu)
+        self.activated.connect(self._on_activated)
 
         self.set_status(TrayStatus.ACTIVE)
+
+    def _on_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+            self.settings_requested.emit()
 
     def set_status(self, status: TrayStatus) -> None:
         self.setIcon(_status_icon(status.color))

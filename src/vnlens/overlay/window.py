@@ -50,6 +50,17 @@ class OverlayWindow(QWidget):
 
         self._fade = QPropertyAnimation(self, b"windowOpacity")
 
+    def apply_config(self, config: OverlayConfig) -> None:
+        """Apply new overlay settings live, without recreating the window."""
+        self._style = renderer.TextStyle.from_config(config)
+        self._position_mode = config.position_mode
+        self._float_pos = (
+            (config.float_pos.x, config.float_pos.y) if config.float_pos else None
+        )
+        if self.isVisible():
+            self._relayout()
+            self.update()
+
     def set_anchor(self, region_px: dict[str, int]) -> None:
         """Set the capture region (in screen pixels) the overlay anchors to."""
         self._anchor = region_px

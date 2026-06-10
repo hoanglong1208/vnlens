@@ -42,17 +42,25 @@ class PipelineWorker(QObject):
     def set_paused(self, paused: bool) -> None:
         self._paused = paused
 
+    def set_provider(self, provider: TranslationProvider) -> None:
+        self._provider = provider
+
+    def update_config(self, config: AppConfig) -> None:
+        self._config = config
+
     def stop(self) -> None:
         self._running = False
 
     def run(self) -> None:
         capture = ScreenCapture()
         detector = ChangeDetector(debounce_ms=300)
-        interval = self._config.capture.interval_ms / 1000
-        source_lang = self._config.ocr.source_lang
-        target_lang = self._config.translation.target_lang
 
         while self._running:
+            # Read per iteration so settings changes apply without a restart.
+            interval = self._config.capture.interval_ms / 1000
+            source_lang = self._config.ocr.source_lang
+            target_lang = self._config.translation.target_lang
+
             region = self._region
             if self._paused or region is None:
                 time.sleep(interval)

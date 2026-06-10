@@ -1,5 +1,3 @@
-import asyncio
-
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (
     QButtonGroup,
@@ -11,10 +9,8 @@ from PyQt6.QtWidgets import (
     QWizardPage,
 )
 
-from ..translation.base import TranslationError
-from ..translation.registry import available_providers, create_provider
-
-SAMPLE_TEXT = "The cherry blossoms are in full bloom."
+from ..translation.registry import available_providers
+from .connection_test import SAMPLE_TEXT, run_connection_test
 
 # (id, label, enabled) — only providers implemented in this version are selectable.
 _PROVIDER_CHOICES = [
@@ -78,15 +74,9 @@ class _TestPage(QWizardPage):
         QTimer.singleShot(0, self._run_test)
 
     def _run_test(self) -> None:
-        provider = create_provider(self._wizard.provider_id, self._wizard.api_key)
-        try:
-            translated = asyncio.run(provider.translate(SAMPLE_TEXT, "en", "vi"))
-        except TranslationError as exc:
-            self._result.setText(f"Lỗi: {exc}")
-            self._passed = False
-        else:
-            self._result.setText(f"→ {translated}")
-            self._passed = True
+        ok, message = run_connection_test(self._wizard.provider_id, self._wizard.api_key)
+        self._result.setText(f"→ {message}" if ok else f"Lỗi: {message}")
+        self._passed = ok
         self.completeChanged.emit()
 
     def isComplete(self) -> bool:

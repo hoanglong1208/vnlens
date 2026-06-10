@@ -7,12 +7,14 @@ from PyQt6.QtWidgets import QApplication
 
 from .capture.region_selector import RegionSelector
 from .config.manager import ConfigManager, config_dir
-from .config.schema import FloatPosition, Region
+from .config.schema import AppConfig, FloatPosition, Region
 from .core.pipeline import PipelineWorker
 from .ocr.winrt_ocr import WinRtOcr
 from .overlay.window import OverlayWindow
 from .translation.base import TranslationProvider
 from .translation.registry import create_provider
+from .ui import theme
+from .ui.settings import SettingsDialog
 from .ui.tray import TrayIcon, TrayStatus
 from .ui.wizard import SetupWizard
 from .utils import dpapi
@@ -41,6 +43,7 @@ class VNLensApp:
     def __init__(self) -> None:
         self.app = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False)
+        self.app.setStyleSheet(theme.QSS)
         self.config_manager = ConfigManager()
         self.config = self.config_manager.load()
         self._paused = False
@@ -56,6 +59,7 @@ class VNLensApp:
         self.tray = TrayIcon()
         self.tray.toggle_requested.connect(self._toggle_pause)
         self.tray.select_region_requested.connect(self._select_region)
+        self.tray.settings_requested.connect(self._open_settings)
         self.tray.move_overlay_toggled.connect(self.overlay.set_move_mode)
         self.tray.reset_position_requested.connect(self._reset_overlay_position)
         self.tray.quit_requested.connect(self._quit)
@@ -149,6 +153,33 @@ class VNLensApp:
         # Anchor first: set_region starts the pipeline producing translations.
         self._update_anchor(region)
         self.worker.set_region(region)
+
+    def _open_settings(self) -> None:
+        dialog = SettingsDialog(self.config)
+        dialog.saved.connect(self._apply_settings)
+        dialog.exec()
+
+    def _apply_settings(self, new_config: AppConfig) -> None:
+        old = self.config
+        self.config = new_config
+        self.config_manager.save(new_config)
+
+        self.overlay.apply_config(new_config.overlay)
+        self.worker.update_config(new_config)
+
+        translation_changed = (
+            new_config.translation.provider != old.translation.provider
+            or new_config.translation.api_keys != old.translation.api_keys
+        )
+        if translation_changed:
+            try:
+                self.worker.set_provider(self._create_provider())
+            except OSError:
+                log.warning("Could not load the new API key; keeping the old provider")
+
+        if new_config.hotkeys != old.hotkeys:
+            self.hotkeys.stop()
+            self._setup_hotkeys()
 
     def _on_overlay_moved(self, x: float, y: float) -> None:
         self.config.overlay.position_mode = "float"
