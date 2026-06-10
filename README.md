@@ -54,6 +54,7 @@ Planned next: Google Translate / LibreTranslate / Claude providers, EasyOCR fall
 - **F4** — move the overlay: a dashed border appears and the box can be dragged anywhere; press F4 again to lock it. "Bám dưới vùng chọn" in the tray menu snaps it back under the capture region.
 - The anchored overlay automatically flips above the capture region when there is no room below (text boxes usually sit at the bottom of the screen) and never leaves the visible screen.
 - Tray icon shows the current state: green (translating), yellow (waiting), red (API error), gray (paused)
+- Double-click the tray icon (or tray menu > "Cài đặt") to open the settings dashboard: translation provider and API key, overlay font size / background opacity / text color / shadow with live preview, OCR source language, capture poll interval, and hotkey bindings. Changes apply immediately, no restart needed.
 - Logs are written to `%APPDATA%\VNLens\vnlens.log`, config to `%APPDATA%\VNLens\config.json`
 
 On first run a 3-step wizard asks for your translation provider and API key, verifies the connection with a sample sentence, then lets you pick the capture region.
