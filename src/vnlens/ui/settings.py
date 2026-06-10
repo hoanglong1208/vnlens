@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QPaintEvent
 from PyQt6.QtWidgets import (
@@ -6,6 +8,7 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -23,7 +26,7 @@ from ..overlay import renderer
 from ..translation.registry import available_providers
 from ..utils import dpapi
 from .connection_test import run_connection_test
-from .theme import TEXT_DIM
+from .theme import ACCENT, SIDEBAR_BG
 
 _PREVIEW_TEXT = "Hoa anh đào đang nở rộ ngoài sân trường."
 _PROVIDER_CHOICES = [
@@ -43,36 +46,87 @@ def _dim_label(text: str) -> QLabel:
     return label
 
 
+def _scaffold(page: QWidget, title: str, subtitle: str) -> QFormLayout:
+    """Standard page layout: header, divider, then a form with roomy spacing."""
+    layout = QVBoxLayout(page)
+    layout.setContentsMargins(28, 24, 28, 24)
+    layout.setSpacing(6)
+
+    heading = QLabel(title)
+    heading.setObjectName("pageTitle")
+    layout.addWidget(heading)
+    layout.addWidget(_dim_label(subtitle))
+
+    divider = QFrame()
+    divider.setObjectName("divider")
+    divider.setFixedHeight(1)
+    layout.addSpacing(8)
+    layout.addWidget(divider)
+    layout.addSpacing(10)
+
+    form = QFormLayout()
+    form.setVerticalSpacing(14)
+    form.setHorizontalSpacing(18)
+    form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+    layout.addLayout(form)
+    layout.addStretch()
+    return form
+
+
+def _labeled_slider(
+    low: int, high: int, value: int, fmt: Callable[[int], str]
+) -> tuple[QSlider, QWidget]:
+    """A slider with a live value label to its right."""
+    slider = QSlider(Qt.Orientation.Horizontal)
+    slider.setRange(low, high)
+    slider.setValue(value)
+
+    label = _dim_label(fmt(value))
+    label.setFixedWidth(64)
+    label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+    slider.valueChanged.connect(lambda v: label.setText(fmt(v)))
+
+    row = QWidget()
+    box = QHBoxLayout(row)
+    box.setContentsMargins(0, 0, 0, 0)
+    box.setSpacing(10)
+    box.addWidget(slider)
+    box.addWidget(label)
+    return slider, row
+
+
 class _TranslationPage(QWidget):
     def __init__(self, config: AppConfig) -> None:
         super().__init__()
         self._config = config
+        form = _scaffold(self, "Dịch thuật", "Dịch vụ dịch và API key của bạn.")
 
         self._provider = QComboBox()
         enabled = set(available_providers())
         for provider_id, label in _PROVIDER_CHOICES:
             self._provider.addItem(label, provider_id)
             if provider_id not in enabled:
-                index = self._provider.count() - 1
-                self._provider.model().item(index).setEnabled(False)
+                self._provider.model().item(self._provider.count() - 1).setEnabled(False)
             if provider_id == config.translation.provider:
                 self._provider.setCurrentIndex(self._provider.count() - 1)
 
         self._key = QLineEdit()
         self._key.setEchoMode(QLineEdit.EchoMode.Password)
         has_key = config.translation.provider in config.translation.api_keys
-        self._key.setPlaceholderText(
-            "Đã lưu — nhập để thay key" if has_key else "Nhập API key"
-        )
+        self._key.setPlaceholderText("Đã lưu — nhập để thay key" if has_key else "Nhập API key")
 
         test_button = QPushButton("Kiểm tra kết nối")
         test_button.clicked.connect(self._on_test)
+        test_row = QWidget()
+        test_box = QHBoxLayout(test_row)
+        test_box.setContentsMargins(0, 0, 0, 0)
+        test_box.addWidget(test_button)
+        test_box.addStretch()
         self._result = _dim_label("")
 
-        form = QFormLayout(self)
         form.addRow("Dịch vụ:", self._provider)
         form.addRow("API key:", self._key)
-        form.addRow("", test_button)
+        form.addRow("", test_row)
         form.addRow("", self._result)
         form.addRow("Ngôn ngữ đích:", _dim_label("Tiếng Việt"))
 
@@ -109,7 +163,7 @@ class _OverlayPreview(QWidget):
     def __init__(self, style: renderer.TextStyle) -> None:
         super().__init__()
         self.style = style
-        self.setMinimumHeight(76)
+        self.setMinimumHeight(84)
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
@@ -122,35 +176,35 @@ class _OverlayPage(QWidget):
         overlay = config.overlay
         self._color = QColor(overlay.text_color)
         self._preview = _OverlayPreview(renderer.TextStyle.from_config(overlay))
+        form = _scaffold(self, "Overlay", "Giao diện hộp dịch hiển thị trên game.")
 
-        self._font_size = QSlider(Qt.Orientation.Horizontal)
-        self._font_size.setRange(12, 24)
-        self._font_size.setValue(overlay.font_size)
-
-        self._opacity = QSlider(Qt.Orientation.Horizontal)
-        self._opacity.setRange(0, 95)
-        self._opacity.setValue(round(overlay.opacity * 100))
+        self._font_size, font_row = _labeled_slider(
+            12, 24, overlay.font_size, lambda v: f"{v} px"
+        )
+        self._opacity, opacity_row = _labeled_slider(
+            0, 95, round(overlay.opacity * 100), lambda v: f"{v}%"
+        )
 
         self._shadow = QCheckBox("Đổ bóng chữ")
         self._shadow.setChecked(overlay.shadow)
 
         self._color_button = QPushButton()
-        self._color_button.setFixedWidth(60)
+        self._color_button.setFixedSize(64, 28)
+        self._color_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._color_button.clicked.connect(self._pick_color)
 
-        for signal in (self._font_size.valueChanged, self._opacity.valueChanged):
-            signal.connect(self._refresh_preview)
+        self._font_size.valueChanged.connect(self._refresh_preview)
+        self._opacity.valueChanged.connect(self._refresh_preview)
         self._shadow.toggled.connect(self._refresh_preview)
 
-        form = QFormLayout(self)
-        form.addRow("Cỡ chữ:", self._font_size)
-        form.addRow("Độ mờ nền:", self._opacity)
+        form.addRow("Cỡ chữ:", font_row)
+        form.addRow("Độ mờ nền:", opacity_row)
         form.addRow("Màu chữ:", self._color_button)
         form.addRow("", self._shadow)
         form.addRow("Xem trước:", self._preview)
         form.addRow(
             "",
-            _dim_label("Nhấn F4 để kéo overlay đến vị trí bất kỳ; menu tray có "
+            _dim_label('Nhấn F4 để kéo overlay đến vị trí bất kỳ; menu tray có '
                        '"Bám dưới vùng chọn" để quay về vị trí tự động.'),
         )
         self._refresh_preview()
@@ -162,7 +216,9 @@ class _OverlayPage(QWidget):
             self._refresh_preview()
 
     def _refresh_preview(self) -> None:
-        self._color_button.setStyleSheet(f"background: {self._color.name()};")
+        self._color_button.setStyleSheet(
+            f"background: {self._color.name()}; border-radius: 6px;"
+        )
         self._preview.style = renderer.TextStyle(
             font_size=self._font_size.value(),
             text_color=self._color,
@@ -181,6 +237,8 @@ class _OverlayPage(QWidget):
 class _OcrPage(QWidget):
     def __init__(self, config: AppConfig) -> None:
         super().__init__()
+        form = _scaffold(self, "OCR", "Nhận diện chữ và tần suất quét màn hình.")
+
         self._engine = QComboBox()
         self._engine.addItem("Windows OCR (khuyến nghị)", "winrt")
         self._engine.addItem("EasyOCR (sắp có)", "easyocr")
@@ -192,24 +250,14 @@ class _OcrPage(QWidget):
             if code == config.ocr.source_lang:
                 self._lang.setCurrentIndex(self._lang.count() - 1)
 
-        self._interval = QSlider(Qt.Orientation.Horizontal)
-        self._interval.setRange(300, 1000)
-        self._interval.setSingleStep(50)
-        self._interval.setValue(config.capture.interval_ms)
-        self._interval_label = _dim_label("")
-        self._interval.valueChanged.connect(self._update_interval_label)
-        self._update_interval_label()
+        self._interval, interval_row = _labeled_slider(
+            300, 1000, config.capture.interval_ms, lambda v: f"{v} ms"
+        )
 
-        form = QFormLayout(self)
         form.addRow("Engine:", self._engine)
         form.addRow("Ngôn ngữ nguồn:", self._lang)
-        form.addRow("Chu kỳ quét:", self._interval)
-        form.addRow("", self._interval_label)
-
-    def _update_interval_label(self) -> None:
-        self._interval_label.setText(
-            f"{self._interval.value()} ms — nhanh hơn tốn CPU hơn, chậm hơn tiết kiệm hơn."
-        )
+        form.addRow("Chu kỳ quét:", interval_row)
+        form.addRow("", _dim_label("Quét nhanh phản hồi sớm hơn nhưng tốn CPU hơn."))
 
     def apply(self, config: AppConfig) -> None:
         config.ocr.engine = self._engine.currentData()
@@ -226,8 +274,8 @@ class _HotkeysPage(QWidget):
 
     def __init__(self, config: AppConfig) -> None:
         super().__init__()
+        form = _scaffold(self, "Phím tắt", "Hoạt động cả khi game đang focus.")
         self._combos: dict[str, QComboBox] = {}
-        form = QFormLayout(self)
         for field, label in self._ACTIONS:
             combo = QComboBox()
             current = getattr(config.hotkeys, field)
@@ -237,7 +285,6 @@ class _HotkeysPage(QWidget):
                     combo.setCurrentIndex(combo.count() - 1)
             self._combos[field] = combo
             form.addRow(label, combo)
-        form.addRow("", _dim_label("Phím tắt hoạt động cả khi game đang focus."))
 
     def conflict(self) -> bool:
         keys = [combo.currentData() for combo in self._combos.values()]
@@ -252,15 +299,20 @@ class _AboutPage(QWidget):
     def __init__(self) -> None:
         super().__init__()
         layout = QVBoxLayout(self)
-        title = QLabel(f"VNLens {__version__}")
-        title.setStyleSheet("font-size: 18px; font-weight: bold;")
+        layout.setContentsMargins(28, 24, 28, 24)
+        layout.setSpacing(8)
+
+        title = QLabel("VNLens")
+        title.setObjectName("brand")
+        layout.addWidget(title)
+        layout.addWidget(_dim_label(f"Phiên bản {__version__}"))
+        layout.addSpacing(10)
+        layout.addWidget(QLabel("Dịch màn hình thời gian thực cho visual novel."))
         link = QLabel(
-            '<a style="color:#e94560" href="https://github.com/hoanglong1208/vnlens">'
+            f'<a style="color:{ACCENT}" href="https://github.com/hoanglong1208/vnlens">'
             "github.com/hoanglong1208/vnlens</a>"
         )
         link.setOpenExternalLinks(True)
-        layout.addWidget(title)
-        layout.addWidget(_dim_label("Dịch màn hình thời gian thực cho visual novel."))
         layout.addWidget(link)
         layout.addWidget(_dim_label("Mã nguồn mở theo giấy phép MIT. Mọi tính năng miễn phí."))
         layout.addStretch()
@@ -283,11 +335,28 @@ class SettingsDialog(QDialog):
     def __init__(self, config: AppConfig, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Cài đặt VNLens")
-        self.resize(640, 440)
+        self.resize(700, 480)
         self._config = config.model_copy(deep=True)
 
+        sidebar = QWidget()
+        sidebar.setFixedWidth(176)
+        sidebar.setStyleSheet(f"background: {SIDEBAR_BG};")
+        side = QVBoxLayout(sidebar)
+        side.setContentsMargins(0, 0, 0, 0)
+        side.setSpacing(0)
+
+        brand_box = QWidget()
+        brand_layout = QVBoxLayout(brand_box)
+        brand_layout.setContentsMargins(18, 20, 18, 14)
+        brand_layout.setSpacing(2)
+        brand = QLabel("VNLens")
+        brand.setObjectName("brand")
+        brand_layout.addWidget(brand)
+        brand_layout.addWidget(_dim_label(f"v{__version__}"))
+        side.addWidget(brand_box)
+
         nav = QListWidget()
-        nav.setFixedWidth(150)
+        nav.setObjectName("nav")
         stack = QStackedWidget()
         self._pages: list[QWidget] = []
         for label, page_cls in self._SECTIONS:
@@ -297,27 +366,39 @@ class SettingsDialog(QDialog):
             stack.addWidget(page)
         nav.currentRowChanged.connect(stack.setCurrentIndex)
         nav.setCurrentRow(0)
+        side.addWidget(nav)
 
         self._error = QLabel("")
-        self._error.setStyleSheet(f"color: {TEXT_DIM};")
+        self._error.setStyleSheet(f"color: {ACCENT};")
         save_button = QPushButton("Lưu")
+        save_button.setObjectName("primary")
         save_button.setDefault(True)
         save_button.clicked.connect(self._save)
         cancel_button = QPushButton("Huỷ")
         cancel_button.clicked.connect(self.reject)
 
+        footer_divider = QFrame()
+        footer_divider.setObjectName("divider")
+        footer_divider.setFixedHeight(1)
+
         buttons = QHBoxLayout()
+        buttons.setContentsMargins(28, 12, 28, 16)
         buttons.addWidget(self._error)
         buttons.addStretch()
-        buttons.addWidget(save_button)
         buttons.addWidget(cancel_button)
+        buttons.addWidget(save_button)
 
         content = QVBoxLayout()
+        content.setContentsMargins(0, 0, 0, 0)
+        content.setSpacing(0)
         content.addWidget(stack)
+        content.addWidget(footer_divider)
         content.addLayout(buttons)
 
         root = QHBoxLayout(self)
-        root.addWidget(nav)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+        root.addWidget(sidebar)
         root.addLayout(content)
 
     def _save(self) -> None:

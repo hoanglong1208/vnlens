@@ -28,6 +28,7 @@ class _ProviderPage(QWizardPage):
         self.setTitle("Chọn dịch vụ dịch thuật")
 
         layout = QVBoxLayout(self)
+        layout.setSpacing(10)
         self._group = QButtonGroup(self)
         enabled = set(available_providers())
         for provider_id, label in _PROVIDER_CHOICES:
@@ -90,6 +91,10 @@ class SetupWizard(QWizard):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("VNLens · Thiết lập lần đầu")
+        # ModernStyle renders consistently with the app stylesheet; the native
+        # Aero style on Windows ignores parts of it.
+        self.setWizardStyle(QWizard.WizardStyle.ModernStyle)
+        self.setMinimumSize(480, 380)
         self.provider_id = "deepl"
         self.api_key = ""
         self.addPage(_ProviderPage(self))
