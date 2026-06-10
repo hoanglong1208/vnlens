@@ -30,18 +30,18 @@ The overlay uses the Win32 `WS_EX_TRANSPARENT` style, so mouse clicks pass strai
 
 ## Tech stack
 
-| Area | Technology | Why |
-| --- | --- | --- |
-| Language | Python 3.12 | Fast iteration, strong OCR/imaging ecosystem, easy to contribute to |
-| GUI / overlay | PyQt6 | GPU-accelerated, frameless translucent windows, system tray |
-| Screen capture | mss | ~1ms per grab, no dependencies on game internals |
-| OCR | Windows WinRT OCR (`winsdk`) | Built into Windows 10/11, ~80ms latency, zero install |
-| Translation | DeepL API (`deepl`) | Best quality among free-tier providers (500k chars/month) |
-| Hotkeys | pynput | Global hotkeys that work while the game has focus |
-| Config | Pydantic v2 | Validated config schema, stored as JSON |
-| Secrets | Windows DPAPI (`ctypes`) | API keys encrypted per Windows user account, never plaintext |
-| Packaging | PyInstaller | Single-file `VNLens.exe` |
-| Tooling | uv, ruff, pytest | Dependency lockfile, lint/format, tests |
+| Area           | Technology                   | Why                                                                 |
+| -------------- | ---------------------------- | ------------------------------------------------------------------- |
+| Language       | Python 3.12                  | Fast iteration, strong OCR/imaging ecosystem, easy to contribute to |
+| GUI / overlay  | PyQt6                        | GPU-accelerated, frameless translucent windows, system tray         |
+| Screen capture | mss                          | ~1ms per grab, no dependencies on game internals                    |
+| OCR            | Windows WinRT OCR (`winsdk`) | Built into Windows 10/11, ~80ms latency, zero install               |
+| Translation    | DeepL API (`deepl`)          | Best quality among free-tier providers (500k chars/month)           |
+| Hotkeys        | pynput                       | Global hotkeys that work while the game has focus                   |
+| Config         | Pydantic v2                  | Validated config schema, stored as JSON                             |
+| Secrets        | Windows DPAPI (`ctypes`)     | API keys encrypted per Windows user account, never plaintext        |
+| Packaging      | PyInstaller                  | Single-file `VNLens.exe`                                            |
+| Tooling        | uv, ruff, pytest             | Dependency lockfile, lint/format, tests                             |
 
 Planned next: Google Translate / LibreTranslate / Claude providers, EasyOCR fallback for bitmap fonts, SQLite translation cache, per-game profiles. See the roadmap in the project plan.
 
