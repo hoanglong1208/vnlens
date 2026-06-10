@@ -1,8 +1,13 @@
+import logging
 import os
 import sys
 from pathlib import Path
 
+from pydantic import ValidationError
+
 from .schema import AppConfig
+
+log = logging.getLogger(__name__)
 
 APP_NAME = "VNLens"
 CONFIG_FILENAME = "config.json"
@@ -26,7 +31,11 @@ class ConfigManager:
         """Load config, falling back to defaults if the file is missing or invalid."""
         if not self.path.exists():
             return AppConfig()
-        return AppConfig.model_validate_json(self.path.read_text(encoding="utf-8"))
+        try:
+            return AppConfig.model_validate_json(self.path.read_text(encoding="utf-8"))
+        except ValidationError:
+            log.warning("Invalid config at %s, using defaults", self.path)
+            return AppConfig()
 
     def save(self, config: AppConfig) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)

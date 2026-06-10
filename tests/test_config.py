@@ -47,3 +47,9 @@ def test_roundtrip(tmp_path):
 def test_load_missing_returns_defaults(tmp_path):
     manager = ConfigManager(path=tmp_path / "missing.json")
     assert manager.load() == AppConfig()
+
+
+def test_load_corrupt_returns_defaults(tmp_path):
+    path = tmp_path / "config.json"
+    path.write_text("{not valid json", encoding="utf-8")
+    assert ConfigManager(path=path).load() == AppConfig()
