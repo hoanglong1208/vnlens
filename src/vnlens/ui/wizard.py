@@ -1,5 +1,6 @@
 import asyncio
 
+from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QLabel,
@@ -66,13 +67,15 @@ class _TestPage(QWizardPage):
 
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel(f'"{SAMPLE_TEXT}"'))
-        self._result = QLabel("Nhấn nút bên dưới để dịch thử.")
+        self._result = QLabel("Đang kiểm tra kết nối...")
         self._result.setWordWrap(True)
         layout.addWidget(self._result)
 
     def initializePage(self) -> None:
         self._passed = False
-        self._run_test()
+        self._result.setText("Đang kiểm tra kết nối...")
+        # Let the page paint before the blocking network call.
+        QTimer.singleShot(0, self._run_test)
 
     def _run_test(self) -> None:
         provider = create_provider(self._wizard.provider_id, self._wizard.api_key)
