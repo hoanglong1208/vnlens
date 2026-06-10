@@ -29,6 +29,16 @@ uv run pytest
 uv run ruff check
 ```
 
+## Build
+
+Build the single-file executable on Windows:
+
+```
+uv run python build.py
+```
+
+The result is `dist/VNLens.exe`.
+
 ## License
 
 MIT
