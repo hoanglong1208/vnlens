@@ -43,9 +43,12 @@ class RegionSelector(QWidget):
         if self._origin is None:
             return
         self._origin = None
-        if self._current.width() < 5 or self._current.height() < 5:
+        # Drags can extend past the screen edge (negative coords); clamp before
+        # converting, or Region validation rejects the selection.
+        rect = self._current.intersected(self.rect())
+        if rect.width() < 5 or rect.height() < 5:
             return
-        self.selected.emit(self._to_region(self._current))
+        self.selected.emit(self._to_region(rect))
         self.close()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
