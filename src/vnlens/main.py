@@ -2,7 +2,7 @@ import logging
 import sys
 
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
-from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtGui import QFontDatabase, QGuiApplication
 from PyQt6.QtWidgets import QApplication
 
 from .capture.region_selector import RegionSelector
@@ -16,6 +16,7 @@ from .ui.tray import TrayIcon, TrayStatus
 from .ui.wizard import SetupWizard
 from .utils import dpapi
 from .utils.hotkey import HotkeyListener
+from .utils.resources import resource_path
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ class VNLensApp:
         self._selector: RegionSelector | None = None
 
     def run(self) -> int:
+        self._load_fonts()
         if not self._has_api_key() and not self._run_wizard():
             return 1
 
@@ -72,6 +74,12 @@ class VNLensApp:
 
         self.thread.start()
         return self.app.exec()
+
+    def _load_fonts(self) -> None:
+        """Register the bundled overlay font; Windows does not ship Noto Sans."""
+        font_path = resource_path("assets/fonts/NotoSans-Regular.ttf")
+        if not font_path.exists() or QFontDatabase.addApplicationFont(str(font_path)) == -1:
+            log.warning("Bundled Noto Sans not loaded; overlay falls back to a system font")
 
     def _has_api_key(self) -> bool:
         return self.config.translation.provider in self.config.translation.api_keys

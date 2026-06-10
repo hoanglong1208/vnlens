@@ -1,5 +1,7 @@
 """Build the single-file Windows executable. Run on Windows: `uv run python build.py`."""
 
+import os
+
 import PyInstaller.__main__
 
 PyInstaller.__main__.run(
@@ -10,6 +12,7 @@ PyInstaller.__main__.run(
         "--windowed",
         # winsdk loads its WinRT submodules dynamically.
         "--collect-submodules=winsdk",
+        f"--add-data=assets{os.pathsep}assets",
         "--noconfirm",
         "--clean",
     ]
