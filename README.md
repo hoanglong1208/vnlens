@@ -51,6 +51,8 @@ Planned next: Google Translate / LibreTranslate / Claude providers, EasyOCR fall
 
 - **F2** — pause / resume translation
 - **F3** — pick a new capture region
+- **F4** — move the overlay: a dashed border appears and the box can be dragged anywhere; press F4 again to lock it. "Bám dưới vùng chọn" in the tray menu snaps it back under the capture region.
+- The anchored overlay automatically flips above the capture region when there is no room below (text boxes usually sit at the bottom of the screen) and never leaves the visible screen.
 - Tray icon shows the current state: green (translating), yellow (waiting), red (API error), gray (paused)
 - Logs are written to `%APPDATA%\VNLens\vnlens.log`, config to `%APPDATA%\VNLens\config.json`
 
