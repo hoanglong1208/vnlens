@@ -1,0 +1,35 @@
+# Internal docs (not published)
+.docs/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+*.spec
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local config and runtime data (may contain secrets)
+config.json
+*.sqlite
+*.db
+
+# EasyOCR downloaded models
+.EasyOCR/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

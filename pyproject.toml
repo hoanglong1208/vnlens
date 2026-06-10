@@ -1,0 +1,48 @@
+[project]
+name = "vnlens"
+version = "0.1.0"
+description = "Real-time screen translator overlay for visual novels"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+dependencies = [
+    "PyQt6>=6.6",
+    "mss>=9.0",
+    "winsdk>=1.0.0b10; sys_platform == 'win32'",
+    "Pillow>=10.0",
+    "opencv-python>=4.8",
+    "deepl>=1.17",
+    "requests>=2.31",
+    "pynput>=1.7",
+    "pydantic>=2.0",
+    "sqlitedict>=2.1",
+    "cryptography>=41.0",
+]
+
+[project.optional-dependencies]
+easyocr = ["easyocr>=1.7"]
+claude = ["anthropic>=0.25"]
+
+[dependency-groups]
+dev = ["pytest>=8.0", "ruff>=0.5", "pyinstaller>=6.0"]
+
+[project.scripts]
+vnlens = "vnlens.main:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
