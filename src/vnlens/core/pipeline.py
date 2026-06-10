@@ -57,10 +57,18 @@ class PipelineWorker(QObject):
                 time.sleep(interval)
                 continue
 
-            stable = detector.update(
-                self._ocr.recognize(capture.grab(region), source_lang),
-                time.monotonic() * 1000,
-            )
+            try:
+                stable = detector.update(
+                    self._ocr.recognize(capture.grab(region), source_lang),
+                    time.monotonic() * 1000,
+                )
+            except Exception:
+                # A single bad frame must not kill the loop; report and keep polling.
+                log.exception("Capture/OCR failed")
+                self.status.emit("error")
+                time.sleep(interval)
+                continue
+
             if stable:
                 self._translate(stable, source_lang, target_lang)
             elif stable == "":

@@ -6,11 +6,12 @@ from PyQt6.QtGui import QFontDatabase, QGuiApplication
 from PyQt6.QtWidgets import QApplication
 
 from .capture.region_selector import RegionSelector
-from .config.manager import ConfigManager
+from .config.manager import ConfigManager, config_dir
 from .config.schema import Region
 from .core.pipeline import PipelineWorker
 from .ocr.winrt_ocr import WinRtOcr
 from .overlay.window import OverlayWindow
+from .translation.base import TranslationProvider
 from .translation.registry import create_provider
 from .ui.tray import TrayIcon, TrayStatus
 from .ui.wizard import SetupWizard
@@ -46,10 +47,10 @@ class VNLensApp:
 
     def run(self) -> int:
         self._load_fonts()
-        if not self._has_api_key() and not self._run_wizard():
+        provider = self._ensure_provider()
+        if provider is None:
             return 1
 
-        provider = self._create_provider()
         self.overlay = OverlayWindow(self.config.overlay)
         self.tray = TrayIcon()
         self.tray.toggle_requested.connect(self._toggle_pause)
@@ -84,7 +85,19 @@ class VNLensApp:
     def _has_api_key(self) -> bool:
         return self.config.translation.provider in self.config.translation.api_keys
 
-    def _create_provider(self):
+    def _ensure_provider(self) -> TranslationProvider | None:
+        """Build the configured provider, rerunning setup when the stored key is
+        unusable (DPAPI keys do not survive a copy to another Windows account)."""
+        if self._has_api_key():
+            try:
+                return self._create_provider()
+            except OSError:
+                log.warning("Stored API key cannot be decrypted; rerunning setup")
+        if not self._run_wizard():
+            return None
+        return self._create_provider()
+
+    def _create_provider(self) -> TranslationProvider:
         provider_id = self.config.translation.provider
         encrypted = self.config.translation.api_keys[provider_id]
         return create_provider(provider_id, dpapi.decrypt(encrypted))
@@ -142,13 +155,32 @@ class VNLensApp:
     def _quit(self) -> None:
         self.worker.stop()
         self.thread.quit()
-        self.thread.wait(2000)
+        # The worker may be mid-retry (up to ~7s of backoff); destroying a live
+        # QThread crashes, so force-stop it if graceful shutdown times out.
+        if not self.thread.wait(3000):
+            self.thread.terminate()
+            self.thread.wait(1000)
         self.hotkeys.stop()
         self.app.quit()
 
 
+def _setup_logging() -> None:
+    """Log to a file in the config dir; a windowed .exe has no console."""
+    handlers: list[logging.Handler] = []
+    log_path = config_dir() / "vnlens.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    handlers.append(logging.FileHandler(log_path, encoding="utf-8"))
+    if sys.stderr is not None:
+        handlers.append(logging.StreamHandler())
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+        handlers=handlers,
+    )
+
+
 def main() -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    _setup_logging()
     if sys.platform != "win32":
         log.warning("VNLens targets Windows; some features will not work on this platform.")
     return VNLensApp().run()
