@@ -39,7 +39,9 @@ class TrayIcon(QSystemTrayIcon):
         super().__init__()
         self.setToolTip("VNLens")
 
-        menu = QMenu()
+        # setContextMenu does not take ownership; keep a reference or the menu
+        # gets garbage-collected and right-click shows nothing.
+        menu = self._menu = QMenu()
         self._status_action = menu.addAction("Đang dịch")
         self._status_action.setEnabled(False)
         menu.addSeparator()
