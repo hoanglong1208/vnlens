@@ -6,7 +6,8 @@ import PyInstaller.__main__
 
 PyInstaller.__main__.run(
     [
-        "src/vnlens/__main__.py",
+        "launcher.py",
+        "--paths=src",
         "--name=VNLens",
         "--onefile",
         "--windowed",

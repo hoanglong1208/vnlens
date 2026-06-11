@@ -3,6 +3,13 @@
 All notable changes to VNLens are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow [SemVer](https://semver.org/).
 
+## [0.1.1] - 2026-06-11
+
+### Fixed
+
+- Packaged exe crashed at startup with "attempted relative import with no known parent package"; the PyInstaller entry point now lives outside the package.
+- Release builds are smoke-tested on CI before publishing.
+
 ## [0.1.0] - 2026-06-11
 
 First public beta.

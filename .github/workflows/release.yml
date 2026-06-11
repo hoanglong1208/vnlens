@@ -19,6 +19,11 @@ jobs:
         run: uv run pytest
       - name: Build executable
         run: uv run python build.py
+      - name: Smoke test executable
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "dist/VNLens.exe" -ArgumentList "--smoke" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Write-Error "Smoke test failed: $($p.ExitCode)"; exit 1 }
       - name: Rename artifact with version
         shell: pwsh
         run: Copy-Item dist/VNLens.exe "dist/VNLens-${{ github.ref_name }}.exe"

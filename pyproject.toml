@@ -1,6 +1,6 @@
 [project]
 name = "vnlens"
-version = "0.1.0"
+version = "0.1.1"
 description = "Real-time screen translator overlay for visual novels"
 readme = "README.md"
 requires-python = ">=3.11"

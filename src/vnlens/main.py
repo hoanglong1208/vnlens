@@ -231,6 +231,10 @@ def _setup_logging() -> None:
 
 
 def main() -> int:
+    # CI runs the frozen exe with --smoke to verify the bundle imports cleanly;
+    # reaching this point means every module resolved.
+    if "--smoke" in sys.argv:
+        return 0
     _setup_logging()
     if sys.platform != "win32":
         log.warning("VNLens targets Windows; some features will not work on this platform.")
