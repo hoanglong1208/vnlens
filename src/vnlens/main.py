@@ -2,7 +2,7 @@ import logging
 import sys
 
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
-from PyQt6.QtGui import QFontDatabase, QGuiApplication
+from PyQt6.QtGui import QFontDatabase, QGuiApplication, QIcon
 from PyQt6.QtWidgets import QApplication
 
 from .capture.region_selector import RegionSelector
@@ -44,6 +44,7 @@ class VNLensApp:
         self.app = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False)
         self.app.setStyleSheet(theme.QSS)
+        self.app.setWindowIcon(QIcon(str(resource_path("assets/icons/icon.ico"))))
         self.config_manager = ConfigManager()
         self.config = self.config_manager.load()
         self._paused = False

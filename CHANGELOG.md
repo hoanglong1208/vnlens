@@ -17,3 +17,4 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions follow 
 - Global hotkeys (F2 pause, F3 select region, F4 move overlay).
 - API keys encrypted with Windows DPAPI; translation retry with backoff; file logging.
 - Bundled Noto Sans font for full Vietnamese diacritics.
+- App logo: window/taskbar/exe icon, tray badge with status dot (green translating, yellow waiting, red error) and grayscale paused variant.

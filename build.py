@@ -12,6 +12,7 @@ PyInstaller.__main__.run(
         "--windowed",
         # winsdk loads its WinRT submodules dynamically.
         "--collect-submodules=winsdk",
+        "--icon=assets/icons/icon.ico",
         f"--add-data=assets{os.pathsep}assets",
         "--noconfirm",
         "--clean",

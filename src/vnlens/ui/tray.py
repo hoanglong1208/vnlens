@@ -4,32 +4,50 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PyQt6.QtWidgets import QMenu, QSystemTrayIcon
 
-_ICON_SIZE = 64
+from ..utils.resources import resource_path
+
 _PAUSE_LABEL = "Tạm dừng"
 _RESUME_LABEL = "Tiếp tục"
+_DOT_BG = QColor(0x1A, 0x1A, 0x2E)
 
 
 class TrayStatus(Enum):
+    """Tray states: the colored logo carries a status dot; paused shows the
+    grayscale logo with no dot."""
+
     ACTIVE = ("Đang dịch", QColor(0x4C, 0xAF, 0x50))
     WAITING = ("Đang chờ", QColor(0xFF, 0xC1, 0x07))
     ERROR = ("Lỗi", QColor(0xE5, 0x39, 0x35))
-    PAUSED = (_PAUSE_LABEL, QColor(0x9E, 0x9E, 0x9E))
+    PAUSED = (_PAUSE_LABEL, None)
 
-    def __init__(self, label: str, color: QColor) -> None:
+    def __init__(self, label: str, dot_color: QColor | None) -> None:
         self.label = label
-        self.color = color
+        self.dot_color = dot_color
 
 
-def _status_icon(color: QColor) -> QIcon:
-    pixmap = QPixmap(_ICON_SIZE, _ICON_SIZE)
-    pixmap.fill(Qt.GlobalColor.transparent)
-    painter = QPainter(pixmap)
-    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    painter.setPen(Qt.PenStyle.NoPen)
-    painter.setBrush(color)
-    painter.drawEllipse(8, 8, _ICON_SIZE - 16, _ICON_SIZE - 16)
-    painter.end()
-    return QIcon(pixmap)
+_icon_cache: dict[TrayStatus, QIcon] = {}
+
+
+def _status_icon(status: TrayStatus) -> QIcon:
+    if status in _icon_cache:
+        return _icon_cache[status]
+
+    name = "tray-off.png" if status is TrayStatus.PAUSED else "tray-on.png"
+    pixmap = QPixmap(str(resource_path(f"assets/icons/{name}")))
+    if status.dot_color is not None:
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        # Dark rim separates the dot from the badge underneath.
+        painter.setBrush(_DOT_BG)
+        painter.drawEllipse(37, 37, 26, 26)
+        painter.setBrush(status.dot_color)
+        painter.drawEllipse(40, 40, 20, 20)
+        painter.end()
+
+    icon = QIcon(pixmap)
+    _icon_cache[status] = icon
+    return icon
 
 
 class TrayIcon(QSystemTrayIcon):
@@ -71,7 +89,7 @@ class TrayIcon(QSystemTrayIcon):
             self.settings_requested.emit()
 
     def set_status(self, status: TrayStatus) -> None:
-        self.setIcon(_status_icon(status.color))
+        self.setIcon(_status_icon(status))
         self._status_action.setText(status.label)
         self._toggle_action.setText(
             _RESUME_LABEL if status is TrayStatus.PAUSED else _PAUSE_LABEL
