@@ -103,6 +103,10 @@ QComboBox QAbstractItemView {{
     selection-background-color: {ACCENT};
     outline: none;
 }}
+QComboBox QAbstractItemView::item {{
+    min-height: 26px;
+    padding: 4px 10px;
+}}
 
 QListWidget#nav {{
     background: transparent;

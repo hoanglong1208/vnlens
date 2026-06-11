@@ -120,6 +120,7 @@ class _TranslationPage(QWidget):
         test_row = QWidget()
         test_box = QHBoxLayout(test_row)
         test_box.setContentsMargins(0, 0, 0, 0)
+        test_box.setSpacing(10)
         test_box.addWidget(test_button)
         test_box.addStretch()
         self._result = _dim_label("")
@@ -217,7 +218,7 @@ class _OverlayPage(QWidget):
 
     def _refresh_preview(self) -> None:
         self._color_button.setStyleSheet(
-            f"background: {self._color.name()}; border-radius: 6px;"
+            f"background: {self._color.name()}; border-radius: 6px; border: 1px solid #2e3458;"
         )
         self._preview.style = renderer.TextStyle(
             font_size=self._font_size.value(),
@@ -336,6 +337,8 @@ class SettingsDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Cài đặt VNLens")
         self.resize(700, 480)
+        # Below this the form rows and footer start clipping.
+        self.setMinimumSize(640, 440)
         self._config = config.model_copy(deep=True)
 
         sidebar = QWidget()
@@ -383,6 +386,7 @@ class SettingsDialog(QDialog):
 
         buttons = QHBoxLayout()
         buttons.setContentsMargins(28, 12, 28, 16)
+        buttons.setSpacing(10)
         buttons.addWidget(self._error)
         buttons.addStretch()
         buttons.addWidget(cancel_button)
