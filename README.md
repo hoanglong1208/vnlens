@@ -1,10 +1,20 @@
 # VNLens
 
+[![CI](https://github.com/hoanglong1208/vnlens/actions/workflows/ci.yml/badge.svg)](https://github.com/hoanglong1208/vnlens/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/hoanglong1208/vnlens)](https://github.com/hoanglong1208/vnlens/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Real-time screen translator overlay for visual novels and text-heavy games.
 
 VNLens watches a region of your screen, recognizes the text inside it, translates it to Vietnamese, and shows the result in a transparent click-through overlay anchored right below the game's text box. You never leave the game: no alt-tabbing, no copy-paste, no second monitor.
 
 Windows 10/11 only. Open source under MIT.
+
+## Download
+
+Grab the latest `VNLens-vX.Y.Z.exe` from the [Releases page](https://github.com/hoanglong1208/vnlens/releases/latest) — single file, no installation needed.
+
+> Windows SmartScreen may warn because the executable is not code-signed. Click "More info" then "Run anyway".
 
 ## How it works
 
